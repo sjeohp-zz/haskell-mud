@@ -15,44 +15,47 @@ import Control.Monad.Fix (fix)
 
 type Msg = (Int, String)
 
-saveFile = "save_world.txt"
-defaultRoom = Room { roomIndex = 0, roomName = "Lobby", roomExits = [] }
-defaultWorld = World { rooms = [defaultRoom], users = [], connected = [] }
-
-usersAll = []
-usersConnected = []
+saveFile = "save_instanceOfWorld.txt"
+defaultRoom = Room { rnum = 0, roomName = "Lobby", roomExits = [], roomUsers = [] }
+defaultWorld = World { roomsAll = [defaultRoom], usersAll = [], usersConnected = [] }
 
 main = 
-	loadWorld saveFile defaultWorld >>= \world ->
-	newMVar world >>= \box ->
+	loadWorld saveFile defaultWorld >>= \instanceOfWorld ->
+	newMVar instanceOfWorld >>= \boxOfWorld ->
    	newChan >>= \chan -> 
 	socket AF_INET Stream 0 >>= \sock -> 
 	setSocketOption sock ReuseAddr 1
     >> bindSocket sock (SockAddrInet 4242 iNADDR_ANY)
     >> listen sock 2
     >> (forkIO $ fix $ \loop -> readChan chan >>= \(_, msg) -> loop)
-    >> mainLoop box sock chan 0
+    >> mainLoop boxOfWorld sock chan 0
 
-mainLoop box sock chan nr =
+mainLoop boxOfWorld sock chan nr =
 	accept sock >>= \conn ->
-	forkIO (runConn box conn chan nr)
-	>> (mainLoop box sock chan $! nr + 1)
+	forkIO (runConn boxOfWorld conn chan nr)
+	>> (mainLoop boxOfWorld sock chan $! nr + 1)
 
-runConn box (sock, _) chan nr =
+runConn boxOfWorld (sock, _) chan nr =
 	let broadcast msg = writeChan chan (nr, msg) in
+	
 	socketToHandle sock ReadWriteMode >>= \hdl ->
 	hSetBuffering hdl NoBuffering
+
 	>> hPutStrLn hdl "Who are you?"
 	>> liftM init (hGetLine hdl) >>= \name ->
-	getUser name box >>= \user ->
+
+	getUser name boxOfWorld >>= \user ->
 	broadcast ("-->" ++ (userName user) ++ " entered.")
 	>> hPutStrLn hdl ("Hi, " ++ (userName user) ++ ".")
 	>> dupChan chan >>= \chan' ->
+
 	readLoop chan' hdl nr >>= \reader ->
-	userLoop chan' hdl nr user box
-	>> takeMVar box >>= \world ->
-	saveWorld saveFile world
-	>> putMVar box world
+	userLoop chan' hdl nr user boxOfWorld
+
+	>> takeMVar boxOfWorld >>= \instanceOfWorld ->
+	saveWorld saveFile instanceOfWorld
+	>> putMVar boxOfWorld instanceOfWorld
+
 	>> killThread reader
 	>> broadcast ("<--" ++ (userName user) ++ " left.")
 	>> hClose hdl
@@ -62,15 +65,15 @@ readLoop chan hdl nr =
 	(readChan chan >>= \(nr', line) -> when (nr /= nr') $ hPutStrLn hdl line)
 	>> loop
 
-userLoop chan hdl nr user box =
+userLoop chan hdl nr user boxOfWorld =
 	handle (\(SomeException _) -> return ()) $ fix $ \loop ->
 	liftM init (hGetLine hdl) >>= \line ->
 	case line of
 		"l"		-> (hPutStrLn hdl $ roomName $ userRoom user)
 					>> loop
 		"quit"	-> hPutStrLn hdl "Farewell"
-					>> takeMVar box >>= \world ->
-					let world' = disconnectUser user world in putMVar box world'
+					>> takeMVar boxOfWorld >>= \instanceOfWorld ->
+					let instanceOfWorld' = disconnectUser user instanceOfWorld in putMVar boxOfWorld instanceOfWorld'
 		_		-> (writeChan chan (nr, ((userName user) ++ ": " ++ line)))
 					>> loop
 

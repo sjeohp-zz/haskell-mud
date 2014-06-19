@@ -2,22 +2,22 @@ module Data where
 
 data World =
 	World {
-	rooms :: [Room],
-	users :: [User],
-	connected :: [User]
+	roomsAll :: [Room],
+	usersAll :: [User],
+	usersConnected :: [User]
 	} deriving (Eq, Show, Read)
 
 data User = 
 	User {
 	userName :: String,
-	userCnctIndex :: Int,
-	userRoom :: Room
+	userRoom :: Room,
+	connectionIndex :: Int
 	} deriving (Eq, Show, Read)
 
 data Room =
 	Room {
-	roomIndex :: Int,
+	rnum :: Int,
 	roomName :: String,
-	roomExits :: [Room]
-	--roomUsers :: [User]
+	roomExits :: [Room],
+	roomUsers :: [User]
 	} deriving (Eq, Show, Read)

@@ -5,35 +5,35 @@ import Data
 
 import Control.Concurrent.MVar
 
-getUser name box =
-	takeMVar box >>= \world ->
-	getUser' name (users world) world >>= \user ->
-	(if userIsConnected name $ connected world
-		then putMVar box world
-		else putMVar box (connectUser (setConnected user world) world))
+getUser name boxOfWorld =
+	takeMVar boxOfWorld >>= \instanceOfWorld ->
+	getUser' name (usersAll instanceOfWorld) instanceOfWorld >>= \user ->
+	(if userIsConnected name $ usersConnected instanceOfWorld
+		then putMVar boxOfWorld instanceOfWorld
+		else putMVar boxOfWorld (connectUser (setConnected user instanceOfWorld) instanceOfWorld))
 	>> return user
+
+getUser' name [] instanceOfWorld = return $ createUser name instanceOfWorld
+getUser' name (x:xs) instanceOfWorld = 
+	if (userName x) == name
+		then return x
+		else getUser' name xs instanceOfWorld
 
 userIsConnected name [] = False
 userIsConnected name (x:xs) = 
 	if userName x == name
 		then True
-		else False
+		else userIsConnected name xs
 
-getUser' name [] world = return $ createUser name world
-getUser' name (x:xs) world = 
-	if (userName x) == name
-		then return x
-		else getUser' name xs world
+createUser name instanceOfWorld = 
+	User { userName = name, connectionIndex = length (usersConnected instanceOfWorld), userRoom = head (roomsAll instanceOfWorld) }
 
-createUser name world = 
-	User { userName = name, userCnctIndex = length (connected world), userRoom = head (rooms world) }
+setConnected user instanceOfWorld = 
+	User { userName = userName user, connectionIndex = length (usersConnected instanceOfWorld), userRoom = userRoom user }
+connectUser user instanceOfWorld = 
+	World { roomsAll = roomsAll instanceOfWorld, usersAll = user:(usersAll instanceOfWorld), usersConnected = user:(usersConnected instanceOfWorld) }
 
-setConnected user world = 
-	User { userName = userName user, userCnctIndex = length (connected world), userRoom = userRoom user }
-connectUser user world = 
-	World { rooms = rooms world, users = user:(users world), connected = user:(connected world) }
-
-disconnectUser user world = 
-	World { rooms = rooms world, users = users world, connected = disconnectUser' user (connected world) }
-disconnectUser' user connected = 
-	let (ys,zs) = splitAt (userCnctIndex user) connected in ys ++ (tail zs)
+disconnectUser user instanceOfWorld = 
+	World { roomsAll = roomsAll instanceOfWorld, usersAll = usersAll instanceOfWorld, usersConnected = disconnectUser' user (usersConnected instanceOfWorld) }
+disconnectUser' user usersConnected = 
+	let (ys,zs) = splitAt (connectionIndex user) usersConnected in ys ++ (tail zs)

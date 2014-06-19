@@ -10,14 +10,14 @@ import qualified System.IO.Strict as Strict
 loadWorld fileName defaultWorld = 
 	(try (read `fmap` Strict.readFile fileName) :: IO (Either SomeException World)) >>= \l ->
   	case l of
-    	Left _ 	-> putStrLn "Using default world." >> return defaultWorld
+    	Left _ 	-> putStrLn "Using default instanceOfWorld." >> return defaultWorld
     	Right w -> putStrLn ("Loaded " ++ fileName) >> return w
 
-saveWorld fileName world = 
-	writeFile fileName (show world) 
+saveWorld fileName instanceOfWorld = 
+	writeFile fileName (show instanceOfWorld) 
 	>> putStrLn ("Saved to " ++ fileName)
 
-fWorld f box = 
-	takeMVar box >>= \world ->
-	f world >>= \_ ->
-	putMVar box world
+fWorld f boxOfWorld = 
+	takeMVar boxOfWorld >>= \instanceOfWorld ->
+	f instanceOfWorld >>= \_ ->
+	putMVar boxOfWorld instanceOfWorld

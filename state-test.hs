@@ -70,8 +70,8 @@ runConn (sock, _) chan nr =
 	hSetBuffering hdl NoBuffering
 	>> hPutStrLn hdl "Who are you?"
 	>> liftM init (hGetLine hdl) >>= \name ->
-	get >>= \world ->
-	put (name:world)
-	>> get >>= \world' ->
-	print world'
-	>> return world'
+	get >>= \instanceOfWorld ->
+	put (name:instanceOfWorld)
+	>> get >>= \instanceOfWorld' ->
+	print instanceOfWorld'
+	>> return instanceOfWorld'
