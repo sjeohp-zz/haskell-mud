@@ -16,4 +16,4 @@ cabal-version:       >=1.8
 
 Executable: 			mud
 Main-is:				mud.hs
-Build-Depends:			base ==4.6.*
+Build-Depends:			base ==4.6.*, network, strict

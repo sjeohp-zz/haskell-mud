@@ -14,10 +14,11 @@ import Control.Monad
 import Control.Monad.Fix (fix)
 
 type Msg = (Int, String)
+type Cmd = (User, String)
 
 saveFile = "save_instanceOfWorld.txt"
-defaultRoom = Room { rnum = 0, roomName = "Lobby", roomExits = [], roomUsers = [] }
-defaultWorld = World { roomsAll = [defaultRoom], usersAll = [], usersConnected = [] }
+
+data Trie a = Leaf a | Branch [Trie a]
 
 main = 
 	loadWorld saveFile defaultWorld >>= \instanceOfWorld ->
@@ -69,11 +70,12 @@ userLoop chan hdl nr user boxOfWorld =
 	handle (\(SomeException _) -> return ()) $ fix $ \loop ->
 	liftM init (hGetLine hdl) >>= \line ->
 	case line of
-		"l"		-> (hPutStrLn hdl $ roomName $ userRoom user)
+		"look"	-> (hPutStrLn hdl $ roomName $ userRoom user)
 					>> loop
 		"quit"	-> hPutStrLn hdl "Farewell"
 					>> takeMVar boxOfWorld >>= \instanceOfWorld ->
-					let instanceOfWorld' = disconnectUser user instanceOfWorld in putMVar boxOfWorld instanceOfWorld'
+					let instanceOfWorld' = disconnectUser user instanceOfWorld in 
+					putMVar boxOfWorld instanceOfWorld'
 		_		-> (writeChan chan (nr, ((userName user) ++ ": " ++ line)))
 					>> loop
 

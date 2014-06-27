@@ -1,0 +1,1 @@
+World {roomsAll = [Room {rnum = 0, roomName = "Void", roomExits = [], roomUsers = []}], usersAll = [User {userName = "joe", userRoom = Room {rnum = 0, roomName = "Void", roomExits = [], roomUsers = []}, connectionIndex = 0}], usersConnected = []}

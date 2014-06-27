@@ -36,4 +36,5 @@ connectUser user instanceOfWorld =
 disconnectUser user instanceOfWorld = 
 	World { roomsAll = roomsAll instanceOfWorld, usersAll = usersAll instanceOfWorld, usersConnected = disconnectUser' user (usersConnected instanceOfWorld) }
 disconnectUser' user usersConnected = 
-	let (ys,zs) = splitAt (connectionIndex user) usersConnected in ys ++ (tail zs)
+	let (ys, zs) = splitAt (connectionIndex user) usersConnected in 
+	ys ++ (tail zs)
